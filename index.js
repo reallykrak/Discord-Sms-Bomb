@@ -9,6 +9,7 @@ module.exports = client;
 
 client.commands = new Collection();
 client.slashCommands = new Collection();
+client.activeAttacks = new Collection(); // Aktif saldırıları takip etmek için eklendi
 client.config = require("./config.json");
 
 require("./handler")(client);
