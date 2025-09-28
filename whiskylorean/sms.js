@@ -3,7 +3,7 @@ const { MessageEmbed } = require("discord.js");
 class SmsBomber {
     constructor(phone, interaction, mode) {
         this.phone = phone;
-        this.mail = "whiskyloreanqweewq@gmail.com"
+        this.mail = "toluqws@gmail.com"
         this.interaction = interaction;
         this.mode = mode;
         this.data = [];
@@ -660,3 +660,4 @@ module.exports =
 };
 
 // developed by youtube.com/@djsturkiye // Whisky Lorean
+
